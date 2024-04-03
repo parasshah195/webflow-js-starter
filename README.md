@@ -19,7 +19,7 @@ In essence, it uses bun to start a development server on [localhost:3000](http:/
 
 ### Output
 
-The project will process and output the files mentioned in the `files` const of `./bin/build.js` file. The output minified files will be in the `./dist` folder for production (pushed to github), and in the `./dist/dev` used for local file serving.
+The project will process and output the files mentioned in the `files` const of `./bin/build.js` file. The output minified files will be in the `./dist/prod` folder for production (pushed to github), and in the `./dist/dev` used for local file serving.
 
 ### Development
 
@@ -76,7 +76,7 @@ There is an opt-in debugging setup that turns on logs in the console. The prefer
 
 ### Production
 
-1. Run `bun run build` to generate the production files in `./dist` folder
+1. Run `bun run build` to generate the production files in `./dist/prod` folder
 
 2. To push code to production, merge the working branch into `main`. A Github Actions workflow will run tagging that version with an incremented [semver](https://semver.org/)) tag. Once pushed, the production code will be auto loaded from [jsDelivr CDN](https://www.jsdelivr.net/).
 
