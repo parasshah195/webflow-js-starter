@@ -18,6 +18,7 @@ const buildSettings = {
   sourcemap: !production,
   treeShaking: true,
   target: production ? 'es2017' : 'esnext',
+  format: 'esm',
 };
 
 // Function to recursively delete directory contents

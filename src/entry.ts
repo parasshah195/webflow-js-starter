@@ -3,99 +3,56 @@
  * Fetches scripts from localhost or production site depending on the setup
  * Polls `localhost` on page load, else falls back to deriving code from production URL
  */
-import { CONSOLE_STYLES } from '$dev/console-styles';
-
-import { SCRIPTS_LOADED_EVENT } from './constants';
 import './dev/scripts-source';
 
-const LOCALHOST_BASE = 'http://localhost:3000/';
+// Add ScriptOptions and ScriptListItem types for global use
+interface ScriptOptions {
+  placement: 'head' | 'body';
+  defer: boolean;
+  isModule: boolean;
+  scriptName?: string;
+}
+
 window.PRODUCTION_BASE = 'https://cdn.jsdelivr.net/gh/igniteagency/{{repo}}/dist/prod/';
 
-window.JS_SCRIPTS = new Set();
-
-const SCRIPT_LOAD_PROMISES: Array<Promise<unknown>> = [];
-
-// init adding scripts to the page
-window.addEventListener('DOMContentLoaded', addJS);
-
 /**
- * Adds all the set scripts to the `window.JS_SCRIPTS` Set
+ * Loads a script either from the JS repo, or accepts a direct library URL too
+ * Examples:
+ * ```ts
+ * window.loadScript('global.js');
+ * window.loadScript('https://cdn.jsdelivr.net/npm/some-lib@1.0.0/dist/index.js', {
+ *   placement: 'head',
+ *   scriptName: 'some-lib',
+ * });
+ * ```
+ * @param url - The URL of the script to load
+ * @param options - The options for the script
+ * @returns A promise that resolves when the script is loaded
  */
-function addJS() {
-  console.log(`Current script loading source: ${window.SCRIPTS_ENV}`);
+window.loadScript = function (url, options): Promise<void> {
+  const opts: ScriptOptions = { placement: 'body', isModule: true, defer: true, ...options };
 
-  if (window.SCRIPTS_ENV === 'local') {
-    console.log(
-      "To run JS scripts from production CDN, execute %c`window.setScriptMode('cdn')`%c in the browser console",
-      CONSOLE_STYLES.highlight,
-      CONSOLE_STYLES.normal
-    );
-    fetchLocalScripts();
-  } else {
-    console.log(
-      "To run JS scripts from localhost, execute %c`window.setScriptMode('local')`%c in the browser console",
-      CONSOLE_STYLES.highlight,
-      CONSOLE_STYLES.normal
-    );
-    appendScripts();
+  if (document.querySelector(`script[src="${url}"]`)) {
+    return Promise.resolve();
   }
-}
 
-function appendScripts() {
-  const BASE = window.SCRIPTS_ENV === 'local' ? LOCALHOST_BASE : window.PRODUCTION_BASE;
-
-  window.JS_SCRIPTS?.forEach((url) => {
+  return new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = BASE + url;
-    script.defer = true;
-
-    const promise = new Promise((resolve, reject) => {
-      script.onload = resolve;
-      script.onerror = () => {
-        console.error(`Failed to load script: ${url}`);
-        reject;
-      };
-    });
-
-    SCRIPT_LOAD_PROMISES.push(promise);
-
-    document.body.appendChild(script);
-  });
-
-  Promise.allSettled(SCRIPT_LOAD_PROMISES).then(() => {
-    console.debug('All scripts loaded');
-    // Add a small delay to ensure all scripts have had a chance to execute
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent(SCRIPTS_LOADED_EVENT));
-    }, 50);
-  });
-}
-
-function fetchLocalScripts() {
-  const LOCALHOST_CONNECTION_TIMEOUT_IN_MS = 150;
-  const localhostFetchController = new AbortController();
-
-  const localhostFetchTimeout = setTimeout(() => {
-    localhostFetchController.abort();
-  }, LOCALHOST_CONNECTION_TIMEOUT_IN_MS);
-
-  fetch(LOCALHOST_BASE, {
-    method: 'HEAD',
-    cache: 'no-store',
-    signal: localhostFetchController.signal,
-  })
-    .then((response) => {
-      if (!response.ok) {
-        console.error({ response });
-        throw new Error('localhost response not ok');
+    script.src = url;
+    if (opts.isModule) script.type = 'module';
+    if (opts.defer) script.defer = true;
+    script.onload = () => {
+      if (opts.scriptName) {
+        document.dispatchEvent(
+          new CustomEvent(`scriptLoaded:${opts.scriptName}`, {
+            detail: { url, scriptName: opts.scriptName },
+          })
+        );
       }
-    })
-    .catch(() => {
-      console.error('localhost not resolved. Switching to production');
-      window.setScriptMode('cdn');
-    })
-    .finally(() => {
-      clearTimeout(localhostFetchTimeout);
-      appendScripts();
-    });
-}
+      resolve();
+    };
+    script.onerror = () => reject(new Error(`Failed to load script: ${url}`));
+
+    document[opts.placement].appendChild(script);
+  });
+};

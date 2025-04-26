@@ -3,7 +3,6 @@ import type GSAP from 'gsap';
 import type ScrollTrigger from 'gsap/ScrollTrigger';
 
 import type { SCRIPTS_ENV } from '$dev/env';
-import type { loadExternalScript } from '$utils/external-script-embed';
 
 declare global {
   /** GSAP and sub-libs loading from Webflow CDN */
@@ -11,7 +10,6 @@ declare global {
   ScrollTrigger: typeof ScrollTrigger;
 
   interface Window {
-    JS_SCRIPTS: Set<string> | undefined;
     Webflow: Webflow;
 
     SCRIPTS_ENV: SCRIPTS_ENV;
@@ -22,7 +20,7 @@ declare global {
 
     PRODUCTION_BASE: string;
 
-    loadExternalScript: typeof loadExternalScript;
+    loadScript: (url: string, options?: ScriptOptions) => Promise<void>;
   }
 
   // Extend `querySelector` and `querySelectorAll` function to stop the nagging of converting `Element` to `HTMLElement` all the time
