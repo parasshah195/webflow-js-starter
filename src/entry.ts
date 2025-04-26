@@ -3,6 +3,8 @@
  * Fetches scripts from localhost or production site depending on the setup
  * Polls `localhost` on page load, else falls back to deriving code from production URL
  */
+import { CONSOLE_STYLES } from '$dev/console-styles';
+
 import { SCRIPTS_LOADED_EVENT } from './constants';
 import './dev/scripts-source';
 
@@ -20,16 +22,20 @@ window.addEventListener('DOMContentLoaded', addJS);
  * Adds all the set scripts to the `window.JS_SCRIPTS` Set
  */
 function addJS() {
-  console.debug(`Current script mode: ${window.SCRIPTS_ENV}`);
+  console.log(`Current script loading source: ${window.SCRIPTS_ENV}`);
 
   if (window.SCRIPTS_ENV === 'local') {
-    console.debug(
-      "To run JS scripts from production CDN, execute `window.setScriptSource('cdn')` in the browser console"
+    console.log(
+      "To run JS scripts from production CDN, execute %c`window.setScriptMode('cdn')`%c in the browser console",
+      CONSOLE_STYLES.highlight,
+      CONSOLE_STYLES.normal
     );
     fetchLocalScripts();
   } else {
-    console.debug(
-      "To run JS scripts from localhost, execute `window.setScriptSource('local')` in the browser console"
+    console.log(
+      "To run JS scripts from localhost, execute %c`window.setScriptMode('local')`%c in the browser console",
+      CONSOLE_STYLES.highlight,
+      CONSOLE_STYLES.normal
     );
     appendScripts();
   }
@@ -66,14 +72,18 @@ function appendScripts() {
 }
 
 function fetchLocalScripts() {
-  const LOCALHOST_CONNECTION_TIMEOUT_IN_MS = 300;
+  const LOCALHOST_CONNECTION_TIMEOUT_IN_MS = 150;
   const localhostFetchController = new AbortController();
 
   const localhostFetchTimeout = setTimeout(() => {
     localhostFetchController.abort();
   }, LOCALHOST_CONNECTION_TIMEOUT_IN_MS);
 
-  fetch(LOCALHOST_BASE, { signal: localhostFetchController.signal })
+  fetch(LOCALHOST_BASE, {
+    method: 'HEAD',
+    cache: 'no-store',
+    signal: localhostFetchController.signal,
+  })
     .then((response) => {
       if (!response.ok) {
         console.error({ response });
@@ -82,7 +92,7 @@ function fetchLocalScripts() {
     })
     .catch(() => {
       console.error('localhost not resolved. Switching to production');
-      window.setScriptSource('cdn');
+      window.setScriptMode('cdn');
     })
     .finally(() => {
       clearTimeout(localhostFetchTimeout);

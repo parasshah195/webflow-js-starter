@@ -84,7 +84,7 @@ You can use that as following:
 - Add any debug console logs in the code using the `console.debug` function instead of `console.log`. This way, they can be toggled on/off using the browser native "Verbose/Debug" level.
 - There is an optional debug mode setup for development that can execute conditional logic using `window.IS_DEBUG` check. Execute `window.setDebugMode(true)` in the browser console to enable the debug mode. Execute `window.setDebugModse(false)` to disable the mode.
 
-### Production CDN
+### Publishing the code to CDN
 
 1. Run `bun run build` to generate the production files in `./dist/prod` folder
    - Alternatively, `pnpm run build` or `npm run build`
