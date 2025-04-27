@@ -12,7 +12,7 @@ interface ScriptOptions {
   scriptName?: string;
 }
 
-window.PRODUCTION_BASE = 'https://cdn.jsdelivr.net/gh/igniteagency/{{repo}}/dist/prod/';
+window.PRODUCTION_BASE = 'https://cdn.jsdelivr.net/gh/parasshah195/{{repo}}/dist/prod/';
 
 /**
  * Loads a script either from the JS repo, or accepts a direct library URL too
