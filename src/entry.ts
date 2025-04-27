@@ -1,3 +1,7 @@
+import '$dev/debug';
+import '$dev/env';
+import { LOCAL_SERVER } from '$dev/env';
+
 /**
  * Entry point for the build system.
  * Fetches scripts from localhost or production site depending on the setup
@@ -13,6 +17,7 @@ interface ScriptOptions {
 }
 
 window.PRODUCTION_BASE = 'https://cdn.jsdelivr.net/gh/parasshah195/{{repo}}/dist/prod/';
+const relativePathBase = window.SCRIPTS_ENV === 'local' ? LOCAL_SERVER : window.PRODUCTION_BASE;
 
 /**
  * Loads a script either from the JS repo, or accepts a direct library URL too
@@ -31,26 +36,30 @@ window.PRODUCTION_BASE = 'https://cdn.jsdelivr.net/gh/parasshah195/{{repo}}/dist
 window.loadScript = function (url, options): Promise<void> {
   const opts: ScriptOptions = { placement: 'body', isModule: true, defer: true, ...options };
 
-  if (document.querySelector(`script[src="${url}"]`)) {
+  // Work with both relative repo paths and direct CDN URLs
+  const isAbsolute = url.startsWith('https://');
+  const finalUrl = isAbsolute ? url : relativePathBase + url;
+
+  if (document.querySelector(`script[src="${finalUrl}"]`)) {
     return Promise.resolve();
   }
 
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = url;
+    script.src = finalUrl;
     if (opts.isModule) script.type = 'module';
     if (opts.defer) script.defer = true;
     script.onload = () => {
       if (opts.scriptName) {
         document.dispatchEvent(
           new CustomEvent(`scriptLoaded:${opts.scriptName}`, {
-            detail: { url, scriptName: opts.scriptName },
+            detail: { url: finalUrl, scriptName: opts.scriptName },
           })
         );
       }
       resolve();
     };
-    script.onerror = () => reject(new Error(`Failed to load script: ${url}`));
+    script.onerror = () => reject(new Error(`Failed to load script: ${finalUrl}`));
 
     document[opts.placement].appendChild(script);
   });

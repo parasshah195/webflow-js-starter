@@ -6,6 +6,7 @@ export const ENV_NAMES: Record<SCRIPTS_ENV, string> = {
   cdn: 'CDN',
 };
 
+export const LOCAL_SERVER = 'http://localhost:3000';
 const ENV_LOCALSTORAGE_ID = 'jsEnv';
 
 window.SCRIPTS_ENV = getENV();
@@ -32,12 +33,16 @@ function getENV(): SCRIPTS_ENV {
   let localStorageItem = localStorage.getItem(ENV_LOCALSTORAGE_ID) as SCRIPTS_ENV;
 
   if (localStorageItem === 'local') {
-    fetch('http://localhost:3000', { method: 'HEAD', cache: 'no-store' }).catch(() => {
-      console.log('Localhost server is not available, switching to production mode');
-      localStorage.setItem(ENV_LOCALSTORAGE_ID, 'cdn');
-      localStorageItem = 'cdn';
-      window.SCRIPTS_ENV = 'cdn';
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 150);
+    fetch(LOCAL_SERVER, { method: 'HEAD', cache: 'no-store', signal: controller.signal })
+      .catch(() => {
+        console.log('Localhost server is not available, switching to production mode');
+        localStorage.setItem(ENV_LOCALSTORAGE_ID, 'cdn');
+        localStorageItem = 'cdn';
+        window.SCRIPTS_ENV = 'cdn';
+      })
+      .finally(() => clearTimeout(timeout));
   }
 
   return localStorageItem || 'cdn';
