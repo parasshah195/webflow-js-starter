@@ -3,7 +3,6 @@
  * Fetches scripts from localhost or production site depending on the setup
  * Polls `localhost` on page load, else falls back to deriving code from production URL
  */
-import './dev/scripts-source';
 
 // Add ScriptOptions and ScriptListItem types for global use
 interface ScriptOptions {
